@@ -1,6 +1,9 @@
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/socket.h>
 #include "protocol.h"
 
 struct Request {
@@ -10,13 +13,54 @@ struct Request {
 	char parameters;
 };
 
-int
-send_request(char *tokens[])
+void *
+send_request()
 {
+	int i, n;
+	char cmd[BUFSIZ];
+	char *tokens[MAX_TOKENS];
 	Request request;
 
-	if (build_request(tokens, &request) < 0)
-		return 1;
+	while (1) {
+		n = read(STDIN_FILENO, cmd, BUFSIZ);
+		cmd[n] = '\0';
+
+		tokens[0] = strtok(cmd, " \n\t");
+		for (i = 1; tokens[i] != NULL; i++) {
+			tokens[i] = strtok(NULL, " \n\t");
+		}
+
+		if (tokens[0] == NULL) {
+			fprintf(stderr, "No tokens detected!\n");
+			exit(1);
+		}
+
+		if (build_request(tokens, &request) < 0)
+			break;
+	}
+}
+
+void *
+read_request(void *p_sockfd)
+{
+	int i, n;
+	char buf[BUFSIZ];
+	time_t ltime;
+	struct tm result;
+	char stime[32];
+
+	while (1) {
+		n = recv(*(int*)p_sockfd, buf, BUFSIZ-1, 0);
+		buf[n] = '\0';
+		ltime = time(NULL);
+		localtime_r(&ltime, &result);
+		asctime_r(&result, stime);
+
+		for (i = 0; stime[i] != '\n'; i++);
+		stime[i] = '\0';
+
+		printf("[READ] %s: %s\n", stime, buf);
+	}
 }
 
 int

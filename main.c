@@ -3,34 +3,60 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/uio.h>
-#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <pthread.h>
 #include "protocol.h"
-
-enum {
-	MAX_TOKENS = 128
-};
 
 int
 main()
 {
-	int i, n;
-	char cmd[BUFSIZ];
-	char *tokens[MAX_TOKENS];
+	int sockfd;
+	struct sockaddr_in server;
+	pthread_t tid_read, tid_send;
 
-	n = read(STDIN_FILENO, cmd, BUFSIZ);
-	cmd[n] = '\0';
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-	tokens[0] = strtok(cmd, " \n\t");
-	for (i = 1; tokens[i] != NULL; i++) {
-		tokens[i] = strtok(NULL, " \n\t");
-	}
-
-	if (tokens[0] == NULL) {
-		fprintf(stderr, "No tokens detected!\n");
+	if (sockfd < 0) {
+		perror("sock");
 		exit(1);
 	}
 
-	send_request(tokens);
+	server.sin_family = AF_INET;
+	server.sin_port = htons(20060);
+	server.sin_addr.s_addr = inet_addr("192.168.1.157");
+
+	if (connect(sockfd, (struct sockaddr *) &server, sizeof(struct sockaddr_in)) < 0) {
+		perror("connect");
+		exit(EXIT_FAILURE);
+	}
+
+	if (pthread_create(&tid_read, NULL, read_request, &sockfd) != 0) {
+		perror("pthread_create");
+		exit(EXIT_FAILURE);
+	}
+
+	if (pthread_create(&tid_send, NULL, send_request, &sockfd) != 0) {
+		perror("pthread_create");
+		exit(EXIT_FAILURE);
+	}
+
+	if (pthread_join(tid_read, NULL) != 0) {
+		fprintf(stderr, "pthread_join: could not join read_request thread\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (pthread_join(tid_send, NULL) != 0) {
+		fprintf(stderr, "pthread_join: could not join send_request thread\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (shutdown(sockfd, SHUT_RDWR) < 0) {
+		perror("shutdown");
+		exit(EXIT_FAILURE);
+	}
 
 	exit(0);
 }
