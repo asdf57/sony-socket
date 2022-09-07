@@ -11,7 +11,7 @@ struct Request {
 	unsigned char header[2];
 	unsigned char type;
 	char command[5];
-	int parameters;
+	char parameters[17];
 	unsigned char footer;
 };
 
@@ -39,10 +39,8 @@ send_request(void *p_sockfd)
 			tokens[i] = strtok(NULL, " \n\t");
 		}
 
-		if (tokens[0] == NULL) {
-			fprintf(stderr, "No tokens detected!\n");
-			exit(1);
-		}
+		if (tokens[0] == NULL)
+			continue;
 
 		if (build_request(tokens, request) < 0)
 			continue;
@@ -105,36 +103,46 @@ build_request(char *tokens[], char *request_str)
 	memwrite(request.header, 0x532A);
 	request.footer = 0x0A;
 
-	if (strcasecmp(tokens[0], "setIrccCode") == 0) {
+	if (strcasecmp(tokens[0], "play") == 0) {
 		request.type = 'C';
 		strcpy(request.command, "IRCC");
-		request.parameters = (int)strtol(tokens[1], &endptr, 10);
+		sprintf(request.parameters, "%016d", PLAY);
+	}
+	else if (strcasecmp(tokens[0], "pause") == 0) {
+		request.type = 'C';
+		strcpy(request.command, "IRCC");
+		sprintf(request.parameters, "%016d", PAUSE);
+	}
+	else if (strcasecmp(tokens[0], "setIrccCode") == 0) {
+		request.type = 'C';
+		strcpy(request.command, "IRCC");
+		sprintf(request.parameters, "%016s", tokens[1]);
 	}
 	else if (strcasecmp(tokens[0], "setPowerStatus") == 0) {
 		request.type = 'C';
 		strcpy(request.command, "POWR");
-		request.parameters = (int)strtol(tokens[1], &endptr, 10);
+		sprintf(request.parameters, "%016s", tokens[1]);
 	}
 	else if (strcasecmp(tokens[0], "setAudioVolume") == 0) {
 		request.type = 'C';
 		strcpy(request.command, "VOLU");
-		request.parameters = (int)strtol(tokens[1], &endptr, 10);
+		sprintf(request.parameters, "%016s", tokens[1]);
 	}
 	else if (strcasecmp(tokens[0], "setAudioMute") == 0) {
 		request.type = 'C';
 		strcpy(request.command, "AMUT");
-		request.parameters = (int)strtol(tokens[1], &endptr, 10);
+		sprintf(request.parameters, "%016s", tokens[1]);
 	}
 	else if (strcasecmp(tokens[0], "setInput") == 0) {
 		request.type = 'C';
 		strcpy(request.command, "INPT");
 		mode_id = (int)strtol(tokens[2], &endptr, 10);
-		request.parameters = get_input_base(tokens[1]) + mode_id;
+		sprintf(request.parameters, "%016d", get_input_base(tokens[1]) + mode_id);
 	}
 	else if (strcasecmp(tokens[0], "setPictureMute") == 0) {
 		request.type = 'C';
 		strcpy(request.command, "PMUT");
-		request.parameters = (int)strtol(tokens[1], &endptr, 10);
+		sprintf(request.parameters, "%016s", tokens[1]);
 	}
 	else if (strcasecmp(tokens[0], "setSceneSetting") == 0) {
 		printf("setSceneSetting\n");
@@ -142,55 +150,54 @@ build_request(char *tokens[], char *request_str)
 	else if (strcasecmp(tokens[0], "togglePowerStatus") == 0) {
 		request.type = 'C';
 		strcpy(request.command, "TPOW");
-		request.parameters = -1;
+		strcpy(request.parameters, "################");
 	}
 	else if (strcasecmp(tokens[0], "getPowerStatus") == 0) {
 		request.type = 'E';
 		strcpy(request.command, "POWR");
-		request.parameters = -1;
+		strcpy(request.parameters, "################");
 	}
 	else if (strcasecmp(tokens[0], "getAudioVolume") == 0) {
 		request.type = 'E';
 		strcpy(request.command, "VOLU");
-		request.parameters = -1;
+		strcpy(request.parameters, "################");
 	}
 	else if (strcasecmp(tokens[0], "getAudioMute") == 0) {
 		request.type = 'E';
 		strcpy(request.command, "AMUT");
-		request.parameters = -1;
+		strcpy(request.parameters, "################");
 	}
 	else if (strcasecmp(tokens[0], "getInput") == 0) {
 		request.type = 'E';
 		strcpy(request.command, "INPT");
-		request.parameters = -1;
+		strcpy(request.parameters, "################");
 	}
 	else if (strcasecmp(tokens[0], "getPictureMute") == 0) {
 		request.type = 'E';
 		strcpy(request.command, "PMUT");
-		request.parameters = -1;
+		strcpy(request.parameters, "################");
 	}
 	else if (strcasecmp(tokens[0], "getBroadcastAddress") == 0) {
-		// request.type = 'E';
-		// strcpy(request.command, "BADR");
-		// request.parameters = -1;
+		request.type = 'E';
+		strcpy(request.command, "BADR");
+		strcpy(request.parameters, "eth0############");
 	}
 	else if (strcasecmp(tokens[0], "getMacAddress") == 0) {
-		printf("getMacAddress\n");
+		request.type = 'E';
+		strcpy(request.command, "MADR");
+		strcpy(request.parameters, "eth0############");
 	}
 	else if (strcasecmp(tokens[0], "getSceneSetting") == 0) {
-		printf("getSceneSetting\n");
+		request.type = 'E';
+		strcpy(request.command, "SCEN");
+		strcpy(request.parameters, "################");
 	}
 	else {
 		fprintf(stderr, "Invalid command detected\n");
 		return -1;
 	}
 
-	if (request.parameters == -1) {
-		sprintf(request_str, "%.2s%c%4s################%c", request.header, request.type, request.command, request.footer);
-	}
-	else {
-		sprintf(request_str, "%.2s%c%4s%016d%c", request.header, request.type, request.command, request.parameters, request.footer);
-	}
+	sprintf(request_str, "%.2s%c%4s%s%c", request.header, request.type, request.command, request.parameters, request.footer);
 
 	return 0;
 }
