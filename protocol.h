@@ -1,12 +1,69 @@
 typedef struct Request Request;
 
-int build_request(char*[], Request *);
-void * send_request();
+int build_request(char*[], char *);
+void * send_request(void *);
 void * read_request(void *);
 
 enum {
 	MAX_TOKENS = 128,
-	SUCCESS = 0xffffffffffffffff,
-	ERROR = 0x0,
-	HEADER = 0x532A,
+};
+
+enum IR {
+	DISPLAY = 5,
+	HOME = 6,
+	OPTIONS = 7,
+	RETURN = 8,
+	UP = 9,
+	DOWN = 10,
+	RIGHT = 11,
+	LEFT = 12,
+	CONFIRM = 13,
+	RED = 14,
+	GREEN = 15,
+	YELLOW = 16,
+	BLUE = 17,
+	NUM1 = 18,
+	NUM2 = 19,
+	NUM3 = 20,
+	NUM4 = 21,
+	NUM5 = 22,
+	NUM6 = 23,
+	NUM7 = 24,
+	NUM8 = 25,
+	NUM9 = 26,
+	NUM0 = 27,
+	VOLUME_UP = 30,
+	VOLUME_DOWN = 31,
+	MUTE = 32,
+	CHANNEL_UP = 33,
+	CHANNEL_DOWN = 34,
+	SUBTITLE = 35,
+	DOT = 38,
+	PICTURE_OFF = 50,
+	WIDE = 61,
+	JUMP = 62,
+	SYNC_MENU = 76,
+	FORWARD = 77,
+	PLAY = 78,
+	REWIND = 79,
+	PREV = 80,
+	STOP = 81,
+	NEXT = 82,
+	PAUSE = 84,
+	FLASH_PLUS = 86,
+	FLASH_MINUS = 87,
+	TV_POWER = 98,
+	AUDIO = 99,
+	INPUT = 101,
+	SLEEP = 104,
+	SLEEP_TIMER = 105,
+	VIDEO_2 = 108,
+	PICTURE_MODE = 110,
+	DEMO_SURROUND = 121,
+	HDMI_1 = 124,
+	HDMI_2 = 125,
+	HDMI_3 = 126,
+	HDMI_4 = 127,
+	ACTION_MENU = 129,
+	HELP = 130
 };
