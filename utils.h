@@ -1,0 +1,1 @@
+void memwrite(void *, int);
