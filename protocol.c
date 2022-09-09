@@ -20,11 +20,8 @@ send_request(void *p_sockfd)
 {
 	int i, n;
 	char cmd[BUFSIZ];
-	char *tokens[MAX_TOKENS];
-	char request[25];
-	time_t ltime;
-	struct tm result;
-	char stime[32];
+	char *cmds[MAX_TOKENS];
+	int num_children;
 
 	while (1) {
 		n = read(STDIN_FILENO, cmd, BUFSIZ);
@@ -34,28 +31,49 @@ send_request(void *p_sockfd)
 
 		cmd[n] = '\0';
 
-		tokens[0] = strtok(cmd, " \n\t");
-		for (i = 1; tokens[i-1] != NULL; i++) {
-			tokens[i] = strtok(NULL, " \n\t");
+		cmds[0] = strtok(cmd, "&");
+		for (i = 1; cmds[i-1] != NULL; i++) {
+			cmds[i] = strtok(NULL, "&");
 		}
 
-		if (tokens[0] == NULL)
-			continue;
-
-		if (build_request(tokens, request) < 0)
-			continue;
-
-		send(*(int*)p_sockfd, request, 24, 0);
-
-		ltime = time(NULL);
-		localtime_r(&ltime, &result);
-		asctime_r(&result, stime);
-
-		for (i = 0; stime[i] != '\n'; i++);
-		stime[i] = '\0';
-
-		printf("[SEND] %s: %s", stime, request);
+		for (i = 0; cmds[i] != NULL; i++) {
+			send_cmd(*(int*)p_sockfd, cmds[i]);
+			sleep(1250);
+		}
 	}
+}
+
+void
+send_cmd(int sockfd, char *cmd)
+{
+	int i;
+	char *tokens[MAX_TOKENS];
+	char request_str[25];
+	time_t ltime;
+	struct tm result;
+	char stime[32];
+
+	tokens[0] = strtok(cmd, " \n\t");
+	for (i = 1; tokens[i-1] != NULL; i++) {
+		tokens[i] = strtok(NULL, " \n\t");
+	}
+
+	if (tokens[0] == NULL)
+		return;
+
+	if (build_request(tokens, request_str) < 0)
+		return;
+
+	send(sockfd, request_str, 24, 0);
+
+	ltime = time(NULL);
+	localtime_r(&ltime, &result);
+	asctime_r(&result, stime);
+
+	for (i = 0; stime[i] != '\n'; i++);
+	stime[i] = '\0';
+
+	printf("[SEND] %s: %s", stime, request_str);
 }
 
 void *

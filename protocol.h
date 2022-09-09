@@ -3,6 +3,7 @@ typedef struct Request Request;
 int build_request(char*[], char *);
 void * send_request(void *);
 void * read_request(void *);
+void send_cmd(int, char *);
 
 enum {
 	MAX_TOKENS = 128,
