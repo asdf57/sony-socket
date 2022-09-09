@@ -165,7 +165,7 @@ build_request(char *tokens[], char *request_str)
 		strcpy(request.command, "POWR");
 		sprintf(request.parameters, "%016s", "0");
 	}
-	else if (strcasecmp(tokens[0], "setAudioVolume") == 0) {
+	else if (strcasecmp(tokens[0], "setAudioVolume") == 0 || strcasecmp(tokens[0], "sv") == 0) {
 		request.type = 'C';
 		strcpy(request.command, "VOLU");
 		sprintf(request.parameters, "%016s", tokens[1]);
