@@ -19,6 +19,7 @@ void *
 send_request(void *p_sockfd)
 {
 	int i, n;
+	int chpid, status;
 	char cmd[BUFSIZ];
 	char *cmds[MAX_TOKENS];
 	int num_children;
@@ -36,9 +37,22 @@ send_request(void *p_sockfd)
 			cmds[i] = strtok(NULL, "&");
 		}
 
-		for (i = 0; cmds[i] != NULL; i++) {
-			send_cmd(*(int*)p_sockfd, cmds[i]);
-			sleep(1250);
+		chpid = fork();
+
+		if (chpid < 0) {
+			perror("fork");
+		}
+		else if (chpid == 0) {
+			for (i = 0; cmds[i] != NULL; i++) {
+				send_cmd(*(int*)p_sockfd, cmds[i]);
+				sleep(2);
+			}
+			exit(0);
+		}
+		else {
+			if (wait(&status) < 0) {
+				perror("wait");
+			}
 		}
 	}
 }
@@ -140,6 +154,16 @@ build_request(char *tokens[], char *request_str)
 		request.type = 'C';
 		strcpy(request.command, "POWR");
 		sprintf(request.parameters, "%016s", tokens[1]);
+	}
+	else if (strcasecmp(tokens[0], "on") == 0) {
+		request.type = 'C';
+		strcpy(request.command, "POWR");
+		sprintf(request.parameters, "%016s", "1");
+	}
+	else if (strcasecmp(tokens[0], "off") == 0) {
+		request.type = 'C';
+		strcpy(request.command, "POWR");
+		sprintf(request.parameters, "%016s", "0");
 	}
 	else if (strcasecmp(tokens[0], "setAudioVolume") == 0) {
 		request.type = 'C';
