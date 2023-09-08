@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <termios.h>
 #include "protocol.h"
 #include "utils.h"
 
